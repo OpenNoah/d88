@@ -2,7 +2,7 @@
 
 ## Overview
 
-Hardware | Part # | Descriptioin | Documentation
+Hardware | Part # | Description | Documentation
 ---|---|---|---
 SoC | Ingenic JZ4755 | 336MHz XBurst-1 (mips32r1) 32-bit | [DS](datasheet/JZ4755_DS.pdf) / [PM](datasheet/JZ4755_pm.pdf) / [Core](datasheet/XBurst1_Core_PM.pdf) / [MXU](datasheet/XBurst1_ISA_MXU2.pdf)
 SDRAM | A3V56S40ETP-G6 | 64MiB: 2 chips x 4 banks x 8192 rows x 512 columns x 16 bits | [DS](datasheet/A3V56S40ETP-G6.pdf)
@@ -16,7 +16,7 @@ SoC pin locations and important test pads are annotated here: \
 
 ## I2C devices
 
-These I2C addresses repond with ACKs:
+These I2C addresses respond with ACKs:
 
 ```text
 I2C scan:
