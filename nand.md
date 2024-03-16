@@ -1,6 +1,6 @@
 # NAND
 
-# Partitions
+## Partitions
 
 NAND partition layout extracted from kernel binary.
 
@@ -17,7 +17,7 @@ unused | - | - | 3968 MiB | 128 MiB | (only 0xff)
 
 Full NAND dump: [nand_dump_OOB.bin.gz](https://github.com/OpenNoah/d88/releases/download/d88/nand_dump_OOB.bin.gz)
 
-# ECC details
+## ECC details
 
 Depending on partition, ECC is located at different places and calculated based on different data.
 
@@ -43,7 +43,7 @@ The NAND has 218 bytes OOB, the remaining bytes appear unused.
 The Ingenic special mtdblock regions (mtdblock-jz) may store OOB metadata when page data is all 0xff, but do not calculate ECC parity bytes. i.e., OOB data does get protected in this case. \
 When reading NAND data for these regions, need to skip ECC decoding if page data is all 0xff.
 
-# Extracting yaffs2 files
+## Extracting yaffs2 files
 
 I found [devttys0/yaffshiv](https://github.com/devttys0/yaffshiv) works well with yaffs2 from NAND dump.
 
@@ -51,17 +51,17 @@ I found [devttys0/yaffshiv](https://github.com/devttys0/yaffshiv) works well wit
 sudo yaffshiv -f rootfs_oob.bin -p 4096 -s 220 -n -o -d rootfs
 ```
 
-# Ingenic special mtdblocks (mtdblock-jz)
+## Ingenic special mtdblocks (mtdblock-jz)
 
 The vfat3 and vfat4 regions are created based on Ingenic's special flavoured mtdblock implementation. \
 Source code can be find in D8's kernel soruce, at \
 `linux-2.6.24.3/drivers/mtd/mtdblock-jz.c`
 
-## OOB format
+### OOB format
 
 Example OOB data:
 
-```
+```text
 PAGE 0x00098500 OOB:
  00000000  ff ff ff ff 80 08 00 00  80 08 00 00 00 00 00 00
  00000010  ff ff ff ff ff ff ff ff  51 8d eb d4 c8 39 e0 89
@@ -79,7 +79,7 @@ Next 4 bytes (0x08-0x11 `0x00000880`) is erase block addresss repeated, for sani
 Last 4 bytes (0x12-0x15 `0x00000000`) is erase block lifetime, i.e. how many times has this block been erased. \
 Then ECC parity data starts from byte offset 24: `51 8d eb d4...`
 
-## Badblock marker
+### Badblock marker
 
 From NAND datasheet:
 
@@ -91,7 +91,7 @@ This is implemented by `drivers/mtd/nand/nand_base.c`, see `NAND_LARGE_BADBLOCK_
 
 NB. Apparently for small page size (<= 512 bytes) NAND, the badblock marker is located at offset 5 instead.
 
-## Multi-plane operation
+### Multi-plane operation
 
 For D88, NAND multi-plane support is only enabled for these mtdblock-jz vfat paritions.
 
@@ -120,7 +120,7 @@ For example, NAND page reading order would be like: \
 Note that also means there are 2 badblock markers for each plane block pair. \
 Both markers need to be checked, and both plane blocks are unusable if either of them is a bad block.
 
-# NAND dump extraction script
+## NAND dump extraction script
 
 Full script code I used for extracting NAND dumps. \
 Python scripts used can be found at (TODO) repo.
