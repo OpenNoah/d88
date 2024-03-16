@@ -57,6 +57,15 @@ The vfat3 and vfat4 regions are created based on Ingenic's special flavoured mtd
 Source code can be find in D8's kernel soruce, at \
 `linux-2.6.24.3/drivers/mtd/mtdblock-jz.c`
 
+### Allocation
+
+mtdblock-jz blocks are allocated based on NAND erase blocks. \
+An erase block is only allocated when accessed by upper layers. It may be mapped to any virtual address. \
+A lifetime counter is implemented in each erase blocks for wear leveling. \
+Erase blocks can be marked as bad blocks and skipped. \
+A certain number of erase blocks can be reseved for wear leveling and hidden from total mtdblock size visible by upper layers. \
+mtdblock-jz exposed virtual block size is only 512 bytes. It maintains some internal RAM cache to deal with the block size mismatch.
+
 ### OOB format
 
 Example OOB data:
@@ -74,8 +83,8 @@ PAGE 0x00098500 OOB:
 ```
 
 First 4 bytes (0x00-0x03 `0xffffffff`) is likely used by mtd tags. \
-Next 4 bytes (0x04-0x07 `0x00000880`) is actual erase block address. \
-Next 4 bytes (0x08-0x11 `0x00000880`) is erase block addresss repeated, for sanity checking. \
+Next 4 bytes (0x04-0x07 `0x00000880`) is virtual erase block address. \
+Next 4 bytes (0x08-0x11 `0x00000880`) is virtual erase block address repeated, for sanity checking. \
 Last 4 bytes (0x12-0x15 `0x00000000`) is erase block lifetime, i.e. how many times has this block been erased. \
 Then ECC parity data starts from byte offset 24: `51 8d eb d4...`
 
