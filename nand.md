@@ -47,6 +47,10 @@ When reading NAND data for these regions, need to skip ECC decoding if page data
 
 I found [devttys0/yaffshiv](https://github.com/devttys0/yaffshiv) works well with yaffs2 from NAND dump.
 
+```bash
+sudo yaffshiv -f rootfs_oob.bin -p 4096 -s 220 -n -o -d rootfs
+```
+
 # Ingenic special mtdblocks (mtdblock-jz)
 
 The vfat3 and vfat4 regions are created based on Ingenic's special flavoured mtdblock implementation. \
@@ -89,7 +93,7 @@ NB. Apparently for small page size (<= 512 bytes) NAND, the badblock marker is l
 
 ## Multi-plane operation
 
-NAND multi-plane support is only enabled for these mtdblock-jz vfat paritions.
+For D88, NAND multi-plane support is only enabled for these mtdblock-jz vfat paritions.
 
 From NAND datasheet:
 
@@ -123,54 +127,54 @@ Python scripts used can be found at (TODO) repo.
 
 ```bash
 #!/bin/bash -ex
-if=nand_dump_OOB.bin
+if=nand_dump_oob.bin
 
 planes=2
 erase_pages=128
 page_size=4096
-OOB_size=220
+oob_size=220
 
-block_size=$((page_size+OOB_size))
+block_size=$((page_size+oob_size))
 
 mkdir -p extract
 
 # offset 0, size 8 KiB: u-boot SPL
-#fname=extract/u-boot-spl
-#dd if=$if of=${fname}_OOB.bin bs=$block_size count=2
-#./split_OOB.py -p $page_size -s $OOB_size ${fname}_OOB.bin ${fname}.bin extract/OOB.bin
+fname=extract/u-boot-spl
+dd if=$if of=${fname}_oob.bin bs=$block_size count=2
+./split_oob.py -p $page_size -s $oob_size ${fname}_oob.bin ${fname}.bin extract/oob.bin
 
 # offset 8 KiB, size 8 KiB: u-boot SPL backup
-#fname=extract/u-boot-spl_backup
-#dd if=$if of=${fname}_OOB.bin bs=$block_size skip=2 count=2
-#./split_OOB.py -p $page_size -s $OOB_size ${fname}_OOB.bin ${fname}.bin extract/OOB.bin
+fname=extract/u-boot-spl_backup
+dd if=$if of=${fname}_oob.bin bs=$block_size skip=2 count=2
+./split_oob.py -p $page_size -s $oob_size ${fname}_oob.bin ${fname}.bin extract/oob.bin
 
 # offset 0, size 4 MiB: u-boot
 fname=extract/u-boot
-dd if=$if of=${fname}_OOB.bin bs=$block_size count=$((4*1024*1024/$page_size))
-./split_OOB.py -p $page_size -s $OOB_size ${fname}_OOB.bin ${fname}.bin extract/OOB.bin
+dd if=$if of=${fname}_oob.bin bs=$block_size count=$((4*1024*1024/$page_size))
+./split_oob.py -p $page_size -s $oob_size ${fname}_oob.bin ${fname}.bin extract/oob.bin
 ./trim_end.py -a 4 -p 255 ${fname}.bin ${fname}_trimmed.bin
 
 # offset 4 MiB, size 4 MiB: kernel
 fname=extract/kernel
-dd if=$if of=${fname}_OOB.bin bs=$block_size skip=$((4*1024*1024/$page_size)) count=$((4*1024*1024/$page_size))
-./split_OOB.py -p $page_size -s $OOB_size ${fname}_OOB.bin ${fname}.bin extract/OOB.bin
+dd if=$if of=${fname}_oob.bin bs=$block_size skip=$((4*1024*1024/$page_size)) count=$((4*1024*1024/$page_size))
+./split_oob.py -p $page_size -s $oob_size ${fname}_oob.bin ${fname}.bin extract/oob.bin
 ./trim_end.py -a 4 -p 255 ${fname}.bin ${fname}_trimmed.bin
 tail -c+65 ${fname}_trimmed.bin | zcat > extract/vmlinux.bin
 
 # offset 8 MiB, size 248 MiB: rootfs
 fname=extract/rootfs
-dd if=$if of=${fname}_OOB.bin bs=$block_size skip=$((8*1024*1024/$page_size)) count=$((248*1024*1024/$page_size))
+dd if=$if of=${fname}_oob.bin bs=$block_size skip=$((8*1024*1024/$page_size)) count=$((248*1024*1024/$page_size))
 
 # https://github.com/zhiyb/yaffshiv
-sudo $(which yaffshiv) -f ${fname}_OOB.bin -p $page_size -s $OOB_size -n -o -d $fname
-#sudo yaffshiv -f ${fname}_OOB.bin -p $page_size -s $OOB_size -n -o -d $fname
+sudo $(which yaffshiv) -f ${fname}_oob.bin -p $page_size -s $oob_size -n -o -d $fname
+#sudo yaffshiv -f ${fname}_oob.bin -p $page_size -s $oob_size -n -o -d $fname
 sudo tar Jcvf ${fname}.tar.xz -C ${fname} .
 sudo rm -rf ${fname}
 
 # offset 256 MiB, size 1000 MiB: vfat3
 fname=extract/vfat3
-dd if=$if of=${fname}_OOB.bin bs=$block_size skip=$((256*1024*1024/$page_size)) count=$((1000*1024*1024/$page_size))
-./mtdblock_jz.py -l $planes -b $erase_pages -p $page_size -s $OOB_size ${fname}_OOB.bin ${fname}.bin
+dd if=$if of=${fname}_oob.bin bs=$block_size skip=$((256*1024*1024/$page_size)) count=$((1000*1024*1024/$page_size))
+./mtdblock_jz.py -l $planes -b $erase_pages -p $page_size -s $oob_size ${fname}_oob.bin ${fname}.bin
 mkdir -p ${fname}
 sudo mount -t vfat -o ro,codepage=936,iocharset=cp936 ${fname}.bin ${fname}
 sudo tar Jcvf ${fname}.tar.xz -C ${fname} .
@@ -179,8 +183,8 @@ rmdir ${fname}
 
 # offset 1256 MiB, size 2712 MiB: vfat4
 fname=extract/vfat4
-dd if=$if of=${fname}_OOB.bin bs=$block_size skip=$((1256*1024*1024/$page_size)) count=$((2712*1024*1024/$page_size))
-./mtdblock_jz.py -l $planes -b $erase_pages -p $page_size -s $OOB_size ${fname}_OOB.bin ${fname}.bin
+dd if=$if of=${fname}_oob.bin bs=$block_size skip=$((1256*1024*1024/$page_size)) count=$((2712*1024*1024/$page_size))
+./mtdblock_jz.py -l $planes -b $erase_pages -p $page_size -s $oob_size ${fname}_oob.bin ${fname}.bin
 mkdir -p ${fname}
 sudo mount -t vfat -o ro,codepage=936,iocharset=cp936 ${fname}.bin ${fname}
 sudo tar zcvf ${fname}.tar.gz -C ${fname} .
@@ -189,5 +193,5 @@ rmdir ${fname}
 
 # offset 3968 MiB, size 128 MiB: unused
 fname=extract/unused
-dd if=$if of=${fname}_OOB.bin bs=$block_size skip=$((3968*1024*1024/$page_size)) count=$((128*1024*1024/$page_size))
+dd if=$if of=${fname}_oob.bin bs=$block_size skip=$((3968*1024*1024/$page_size)) count=$((128*1024*1024/$page_size))
 ```
